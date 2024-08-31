@@ -61,31 +61,17 @@ def chat():
         f" Please always answer in a casual tone."
         f" Ask the user a question, Don't tell me what you like"
         f" Talk to me like a 5-year-old."
-        # f" User's name is {extraInfo.get('nickname', 'Unknown')}, "
-        # f" User's gender is {extraInfo.get('gender', 'Unknown')}, "
-        # f" User's age is {extraInfo.get('age', 'Unknown')}, "
-        # f" User's favorite season is {extraInfo.get('season', 'Unknown')}, "
-        # f" User's likedScents is {extraInfo.get('likedScents', 'Unknown')}, "
-        # f" User's dislikedScents is {extraInfo.get('dislikedScents', 'Unknown')}, "
+        f" Please ask only one question per conversation."
+        f" User's name is {extraInfo.get('nickname', 'Unknown')}, "
+        f" User's gender is {extraInfo.get('gender', 'Unknown')}, "
+        f" User's age is {extraInfo.get('age', 'Unknown')}, "
+        f" User's favorite season is {extraInfo.get('season', 'Unknown')}, "
+        f" User's likedScents is {extraInfo.get('likedScents', 'Unknown')}, "
+        f" User's dislikedScents is {extraInfo.get('dislikedScents', 'Unknown')}, "
     )
 
     formatted_prompt = PROMPT.format(history=history, input=input_text)
     response_text = get_response(formatted_prompt)
-
-    replacements = {
-        "이야": "이애오",
-        "이에요": "이애오",
-        "세요": "새오",
-        "게요": "게오",
-        "어요": "어오",
-        "해요": "해오",
-        "이예요": "이애오",
-        "요": "오",
-        "아요": "아오",
-    }
-
-    for key, value in replacements.items():
-        response_text = response_text.replace(key, value)
 
     return jsonify({'input': input_text, 'response': response_text})
 
