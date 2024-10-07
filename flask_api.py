@@ -104,9 +104,9 @@ def chat():
 
     return jsonify({'response': response})
 
-# 유사도 계산 API
-@app.route("/api/similarity", methods=['POST'])
-def similarity():
+# 유사도 계산 및 예측 API
+@app.route("/api/similarity_and_predict", methods=['POST'])
+def similarity_and_predict():
     data = request.json
     session_id = data.get('session_id', 'default_session')
 
@@ -132,17 +132,16 @@ def similarity():
         # 가중치 적용
         weighted_results = apply_weights_to_similarity(similarity_results)
 
-        return jsonify({'input_data': weighted_results})
+        # 예측 호출
+        predicted_notes = predict_internal(weighted_results)
+
+        return jsonify({'input_data': weighted_results, 'predicted_notes': predicted_notes})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# 예측 API
-@app.route("/api/predict", methods=['POST'])
-def predict():
-    data = request.json
-    weighted_results = data.get('input_data')
-
+# 내부 예측 함수
+def predict_internal(weighted_results):
     # 가중치를 DataFrame으로 변환
     input_df = pd.DataFrame([weighted_results])
 
@@ -171,7 +170,10 @@ def predict():
         for idx in fruity_note_indices:
             predicted_notes_binary[0][idx] = 0
 
-    return jsonify({"predicted_notes": predicted_notes_binary[0]})
+        # 결과 배열을 문자열로 변환
+    predicted_notes_string = ', '.join(map(str, predicted_notes_binary[0]))
+
+    return predicted_notes_string
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5001)
