@@ -105,7 +105,7 @@ def chat():
     return jsonify({'response': response})
 
 # 유사도 계산 및 예측 API
-@app.route("/api/similarity_and_predict", methods=['POST'])
+@app.route("/api/recipe", methods=['POST'])
 def similarity_and_predict():
     data = request.json
     session_id = data.get('session_id', 'default_session')
