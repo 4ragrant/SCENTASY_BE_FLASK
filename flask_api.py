@@ -42,18 +42,24 @@ class MLP(nn.Module):
 # Load pre-trained model and scaler
 scaler = None
 model = None
+accord_scaler = None
+accord_model = None
 
-def load_model():
-    global model, scaler
+def load_models():
+    global model, scaler, accord_model, accord_scaler
 
     # 스케일러 로드
     scaler = joblib.load('scaler.pkl')
+    accord_scaler = joblib.load('accord_scaler.pkl')
 
     # 전체 모델을 로드
     model = torch.load('model.pth')
-    model.eval()
+    accord_model = torch.load('accord_model.pth')
 
-load_model()
+    model.eval()
+    accord_model.eval()
+
+load_models()
 
 # 세션 ID를 기반으로 세션 기록을 가져오는 함수
 def get_session_history(session_id):
@@ -134,8 +140,13 @@ def similarity_and_predict():
 
         # 예측 호출
         predicted_notes = predict_internal(weighted_results)
+        # predicted_accords = predict_accords(predicted_notes)
 
-        return jsonify({'input_data': weighted_results, 'predicted_notes': predicted_notes})
+        return jsonify({
+            'input_data': weighted_results,
+            'predicted_notes': predicted_notes,
+            # 'predicted_accords': predicted_accords
+        })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -174,6 +185,34 @@ def predict_internal(weighted_results):
     predicted_notes_string = ', '.join(map(str, predicted_notes_binary[0]))
 
     return predicted_notes_string
+
+# 어코드 예측 함수
+@app.route("/api/accord", methods=['POST'])
+def predict_accords():
+    data = request.json
+    predicted_notes = data.get("predicted_notes")
+
+    # 입력 데이터 검증
+    if not predicted_notes:
+        return jsonify({'error': 'Predicted notes are required.'}), 400
+
+    # 예측된 노트를 데이터프레임으로 변환
+    input_df = pd.DataFrame([predicted_notes])
+
+    # 스케일러 적용
+    input_scaled = accord_scaler.transform(input_df)
+
+    # 텐서로 전환
+    input_tensor = torch.tensor(input_scaled, dtype=torch.float32)
+
+    # 어코드 예측
+    with torch.no_grad():
+        predicted_accords = accord_model(input_tensor)
+
+    # 어코드 비율을 리스트로 반환
+    predicted_accords_ratios = predicted_accords.numpy().tolist()[0]
+
+    return jsonify({'predicted_accords': predicted_accords_ratios})
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5001)
