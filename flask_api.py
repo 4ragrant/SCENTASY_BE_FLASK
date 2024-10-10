@@ -140,12 +140,12 @@ def similarity_and_predict():
 
         # 예측 호출
         predicted_notes = predict_internal(weighted_results)
-        # predicted_accords = predict_accords(predicted_notes)
+        predicted_accords = predict_accords([int(x.strip()) for x in predicted_notes.split(',')])
 
         return jsonify({
             'input_data': weighted_results,
             'predicted_notes': predicted_notes,
-            # 'predicted_accords': predicted_accords
+            'predicted_accords': predicted_accords
         })
 
     except Exception as e:
@@ -181,17 +181,14 @@ def predict_internal(weighted_results):
         for idx in fruity_note_indices:
             predicted_notes_binary[0][idx] = 0
 
-        # 결과 배열을 문자열로 변환
+    # 결과 배열을 문자열로 변환
     predicted_notes_string = ', '.join(map(str, predicted_notes_binary[0]))
 
     return predicted_notes_string
 
 # 어코드 예측 함수
-@app.route("/api/accord", methods=['POST'])
-def predict_accords():
-    data = request.json
-    predicted_notes = data.get("predicted_notes")
-
+# @app.route("/api/accord", methods=['POST'])
+def predict_accords(predicted_notes):
     # 입력 데이터 검증
     if not predicted_notes:
         return jsonify({'error': 'Predicted notes are required.'}), 400
@@ -212,7 +209,7 @@ def predict_accords():
     # 어코드 비율을 리스트로 반환
     predicted_accords_ratios = predicted_accords.numpy().tolist()[0]
 
-    return jsonify({'predicted_accords': predicted_accords_ratios})
+    return predicted_accords_ratios
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5001)
