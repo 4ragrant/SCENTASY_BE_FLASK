@@ -142,10 +142,13 @@ def similarity_and_predict():
         predicted_notes = predict_internal(weighted_results)
         predicted_accords = predict_accords([int(x.strip()) for x in predicted_notes.split(',')])
 
+        # 어코드 이름과 값을 매핑하는 함수 호출
+        predicted_accords_with_columns = map_accords_to_columns(predicted_accords)
+
         return jsonify({
             'input_data': weighted_results,
             'predicted_notes': predicted_notes,
-            'predicted_accords': predicted_accords
+            'predicted_accords': predicted_accords_with_columns
         })
 
     except Exception as e:
@@ -187,7 +190,6 @@ def predict_internal(weighted_results):
     return predicted_notes_string
 
 # 어코드 예측 함수
-# @app.route("/api/accord", methods=['POST'])
 def predict_accords(predicted_notes):
     # 입력 데이터 검증
     if not predicted_notes:
@@ -210,6 +212,23 @@ def predict_accords(predicted_notes):
     predicted_accords_ratios = predicted_accords.numpy().tolist()[0]
 
     return predicted_accords_ratios
+
+# 어코드 매핑 함수
+def map_accords_to_columns(predicted_accords):
+    accord_columns = [
+        "시트러스", "구르망", "오리엔탈", 
+        "머스크", "프루티", "우디", 
+        "스파이시", "플로럴", "아쿠아틱", 
+        "레더", "아로마틱", "스모키"
+    ]
+
+    # 어코드 이름과 값을 매핑
+    predicted_accords_with_columns = [
+        {"accord": accord_columns[i], "value": predicted_accords[i]} 
+        for i in range(len(predicted_accords))
+    ]
+
+    return predicted_accords_with_columns
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5001)
