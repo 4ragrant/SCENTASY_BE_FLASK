@@ -28,3 +28,22 @@ def create_prompt():
 # Answer:"""
     )
     return prompt
+
+def create_title_description_prompt():
+    return PromptTemplate.from_template(
+        """Based on the conversation below, generate a creative perfume title and description.
+
+        Conversation:
+        {conversation_text}
+
+        Instructions:
+        1. The perfume title should be short and appealing, evoking a sense of adventure, relaxation, or excitement, especially for a day out or a travel occasion.
+        2. The perfume description should creatively express the scent's feeling and characteristics, making it suitable for a fun day out or a travel experience.
+        3. Please respond in Korean.
+
+        Example description:
+        제목: 자신감의 순간
+        설명: 중요한 순간에 자신감을 높여주는 우아하고 정돈된 향입니다. 상쾌한 시트러스 노트로 시작해 은은한 백합과 자스민의 플로럴 어코드가 지적이고 우아한 분위기를 연출합니다. 베이스로는 따뜻한 샌달우드와 머스크가 안정감 있는 마무리를 만들어 긴장 속에서도 차분함과 자신감을 유지하게 해줍니다.
+
+        Generate the title and description:"""
+    )

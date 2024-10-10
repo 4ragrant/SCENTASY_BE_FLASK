@@ -3,6 +3,7 @@ from langchain_core.runnables import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
 from prompt_template import create_prompt
+from prompt_template import create_title_description_prompt
 from chat_model import create_chain
 from kiwi_module import KiwiProcessor, stopwords, apply_weights_to_similarity
 import torch.nn as nn
@@ -10,6 +11,10 @@ import threading
 import torch
 import pandas as pd
 import joblib
+
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import HumanMessage, SystemMessage
+
 
 app = Flask(__name__)
 
@@ -145,10 +150,15 @@ def similarity_and_predict():
         # 어코드 이름과 값을 매핑하는 함수 호출
         predicted_accords_with_columns = map_accords_to_columns(predicted_accords)
 
+        # GPT를 사용하여 제목과 설명 생성
+        title, description = generate_title_and_description(conversation_text)
+
         return jsonify({
             'input_data': weighted_results,
             'predicted_notes': predicted_notes,
-            'predicted_accords': predicted_accords_with_columns
+            'predicted_accords': predicted_accords_with_columns,
+            'title': title,
+            'description': description
         })
 
     except Exception as e:
@@ -222,13 +232,35 @@ def map_accords_to_columns(predicted_accords):
         "레더", "아로마틱", "스모키"
     ]
 
-    # 어코드 이름과 값을 매핑
+    # 어코드 이름과 값을 매핑 및 필터링
     predicted_accords_with_columns = [
-        {"accord": accord_columns[i], "value": predicted_accords[i]} 
-        for i in range(len(predicted_accords))
+        {"accord": accord_columns[i], "value": round(predicted_accords[i], 3)} 
+        for i in range(len(predicted_accords)) if predicted_accords[i] >= 0.5
     ]
 
     return predicted_accords_with_columns
+
+def generate_title_and_description(conversation_text):
+    # ChatOpenAI 인스턴스 생성
+    llm = ChatOpenAI(model_name="gpt-4", temperature=0.7)
+    prompt_template = create_title_description_prompt()
+    prompt = prompt_template.format(conversation_text=conversation_text)
+
+    # 프롬프트 생성
+    messages = [
+        SystemMessage(content="You are an assistant that generates creative perfume titles and descriptions."),
+        HumanMessage(content=prompt)
+    ]
+
+    # 모델 호출
+    response = llm(messages)
+
+    # 응답에서 제목과 설명 추출
+    generated_text = response.content.strip().split("\n")
+    title = generated_text[0].replace("제목: ", "").strip()
+    description = generated_text[1].replace("설명: ", "").strip()
+
+    return title, description
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5001)
