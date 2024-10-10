@@ -53,7 +53,7 @@ def load_models():
     accord_scaler = joblib.load('accord_scaler.pkl')
 
     # 전체 모델을 로드
-    model = torch.load('model_ver2.pth.pth')
+    model = torch.load('model_ver2.pth')
     accord_model = torch.load('accord_model.pth')
 
     model.eval()
