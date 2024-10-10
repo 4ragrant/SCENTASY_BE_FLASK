@@ -142,16 +142,18 @@ def similarity_and_predict():
 
         # 가중치 적용
         weighted_results = apply_weights_to_similarity(similarity_results)
-
+        
         # 예측 호출
-        predicted_notes = predict_internal(weighted_results)
-        predicted_accords = predict_accords([int(x.strip()) for x in predicted_notes.split(',')])
+        predicted_notes = predict_internal(weighted_results) # 이진값
+        predicted_notes_array = [int(x.strip()) for x in predicted_notes.split(',')]
+        predicted_accords = predict_accords(predicted_notes_array)
 
-        # 어코드 이름과 값을 매핑하는 함수 호출
+        # 이름 매핑
+        predicted_note_names = map_notes_to_columns(predicted_notes_array)
         predicted_accords_with_columns = map_accords_to_columns(predicted_accords)
 
-        # GPT를 사용하여 제목과 설명 생성
-        title, description = generate_title_and_description(conversation_text)
+        # 제목과 설명 생성
+        title, description = generate_title_and_description(conversation_text, predicted_note_names, predicted_accords_with_columns)
 
         return jsonify({
             'input_data': weighted_results,
@@ -199,6 +201,23 @@ def predict_internal(weighted_results):
 
     return predicted_notes_string
 
+# 노트 매핑 함수
+def map_notes_to_columns(predicted_notes):
+    note_columns = [
+        "Bergamot_TopNote", "Mint_TopNote", "Lemon_TopNote", "Aqual_TopNote",
+        "Grapefruit Blossom_TopNote", "Peach_TopNote", "Fig_TopNote",
+        "Black Cherry_TopNote", "Green_TopNote", "Freesia_MiddleNote",
+        "Rose_MiddleNote", "Pepper_MiddleNote", "Rosemary_MiddleNote",
+        "Muguet_MiddleNote", "Magnolia_MiddleNote", "Ocean_MiddleNote",
+        "Black Currant_MiddleNote", "Musk_MiddleNote", "Vanilla_BaseNote",
+        "Sandalwood_BaseNote", "Leather_BaseNote", "Patchouli_BaseNote",
+        "Cedar_BaseNote", "Abmer_BaseNote", "Frankincense_BaseNote",
+        "Hinoki Wood_BaseNote"
+    ]
+
+    active_notes = [note_columns[i] for i, value in enumerate(predicted_notes) if value == 1]
+    return active_notes
+
 # 어코드 예측 함수
 def predict_accords(predicted_notes):
     # 입력 데이터 검증
@@ -240,13 +259,24 @@ def map_accords_to_columns(predicted_accords):
 
     return predicted_accords_with_columns
 
-def generate_title_and_description(conversation_text):
+# 제목과 설명 생성 함수
+def generate_title_and_description(conversation_text, predicted_note_names, predicted_accords_with_columns):
     # ChatOpenAI 인스턴스 생성
     llm = ChatOpenAI(model_name="gpt-4", temperature=0.7)
     prompt_template = create_title_description_prompt()
-    prompt = prompt_template.format(conversation_text=conversation_text)
 
-    # 프롬프트 생성
+    notes_str = ', '.join(predicted_note_names)
+    accords_str = ', '.join([f"{accord['accord']} ({accord['value']})" for accord in predicted_accords_with_columns])
+
+    print(notes_str)
+    print(accords_str)
+
+    prompt = prompt_template.format(
+        conversation_text=conversation_text,
+        notes_str=notes_str,
+        accords_str=accords_str
+    )
+    
     messages = [
         SystemMessage(content="You are an assistant that generates creative perfume titles and descriptions."),
         HumanMessage(content=prompt)

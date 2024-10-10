@@ -31,15 +31,19 @@ def create_prompt():
 
 def create_title_description_prompt():
     return PromptTemplate.from_template(
-        """Based on the conversation below, generate a creative perfume title and description.
+        """Based on the following conversation and predicted perfume characteristics, generate a creative title and description for the perfume.
 
         Conversation:
         {conversation_text}
 
+        Predicted Notes: {notes_str}
+        Predicted Accords: {accords_str}
+
         Instructions:
-        1. The perfume title should be short and appealing, evoking a sense of adventure, relaxation, or excitement, especially for a day out or a travel occasion.
-        2. The perfume description should creatively express the scent's feeling and characteristics, making it suitable for a fun day out or a travel experience.
-        3. Please respond in Korean.
+        1. The title should be short and appealing.
+        2. The description should creatively express the scent's feeling and characteristics, using the predicted notes and accords.
+        3. Make sure to consider the mood and details from the conversation when writing the description.
+        4. Please respond in Korean.
 
         Example description:
         제목: 자신감의 순간
