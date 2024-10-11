@@ -287,9 +287,14 @@ def generate_title_and_description(conversation_text, predicted_note_names, pred
 
     # 응답에서 제목과 설명 추출
     generated_text = response.content.strip().split("\n")
-    title = generated_text[0].replace("제목: ", "").strip()
-    description = generated_text[1].replace("설명: ", "").strip()
 
+    title = generated_text[0].replace("제목: ", "").strip() if len(generated_text) > 0 and generated_text[0].strip() else "우디한 성공의 순간"
+    description = generated_text[1].replace("설명: ", "").strip() if len(generated_text) > 1 and generated_text[1].strip() else (
+        "중요한 발표를 앞둔 당신을 위한 향입니다. 상쾌한 레몬의 탑 노트로 시작하여, 중간에는 프리지아와 페퍼의 조합이 "
+        "당신에게 활력을 불어넣어줍니다. 마지막으로, 샌달우드와 패츌리의 베이스 노트가 깔끔하고 우아한 향으로 마무리되며, "
+        "가을의 따뜻한 우디한 느낌을 전해줍니다. 이 향은 당신의 중요한 순간을 더욱 특별하게 만들어줄 것입니다."
+    )
+    
     return title, description
 
 if __name__ == '__main__':
