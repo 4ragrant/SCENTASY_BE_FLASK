@@ -11,6 +11,7 @@ import threading
 import torch
 import pandas as pd
 import joblib
+import numpy as np
 
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
@@ -26,6 +27,28 @@ store = {}
 
 # 프롬프트 생성
 prompt = create_prompt()
+
+# `TransformerModel` 클래스 정의
+class TransformerModel(nn.Module):
+    def __init__(self, input_size, output_size, num_heads, hidden_dim, num_layers, dropout=0.3):
+        super(TransformerModel, self).__init__()
+        self.input_layer = nn.Linear(input_size, hidden_dim)
+        self.pos_encoder = nn.Sequential(nn.Linear(hidden_dim, hidden_dim), nn.ReLU())
+        self.transformer = nn.Transformer(
+            d_model=hidden_dim,
+            nhead=num_heads,
+            num_encoder_layers=num_layers,
+            num_decoder_layers=num_layers,
+            dropout=dropout
+        )
+        self.output_layer = nn.Linear(hidden_dim, output_size)
+        nn.init.xavier_uniform_(self.output_layer.weight)
+
+    def forward(self, x):
+        x = self.input_layer(x)
+        x = self.pos_encoder(x)
+        x = self.transformer(x.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
+        return torch.sigmoid(self.output_layer(x))
 
 # `MLP` 클래스 정의
 class MLP(nn.Module):
@@ -50,15 +73,24 @@ model = None
 accord_scaler = None
 accord_model = None
 
+# 하이퍼파라미터
+input_size = 52  # 입력 피처 수
+output_size = 26  # 예측할 노트 수
+num_heads = 4
+hidden_dim = 128
+num_layers = 3
+
 def load_models():
     global model, scaler, accord_model, accord_scaler
 
     # 스케일러 로드
-    scaler = joblib.load('scaler.pkl')
+    scaler = joblib.load('new_scaler.pkl')
+    #scaler = StandardScaler()
     accord_scaler = joblib.load('accord_scaler.pkl')
 
     # 전체 모델을 로드
-    model = torch.load('model_ver2.pth')
+    model = TransformerModel(input_size, output_size, num_heads, hidden_dim, num_layers)
+    model.load_state_dict(torch.load('new_trained_model.pth'))
     accord_model = torch.load('accord_model.pth')
 
     model.eval()
@@ -172,7 +204,7 @@ def predict_internal(weighted_results):
     input_df = pd.DataFrame([weighted_results])
 
     # 스케일러 적용
-    input_scaled = scaler.transform(input_df)
+    input_scaled = scaler.transform(input_df.values)
 
     # 텐서로 전환
     input_tensor = torch.tensor(input_scaled, dtype=torch.float32)
@@ -183,18 +215,22 @@ def predict_internal(weighted_results):
 
     # 예측 데이터 이진화
     predicted_notes_binary = (predicted_notes > 0.4).int().numpy().tolist()
+    # 이진화 (임계값 0.5 적용)
+    #predicted_notes_binary = np.zeros_like(predicted_notes)  # 모든 값을 0으로 초기화
+    #top_5_indices = np.argsort(predicted_notes[0])[::-1][:5]  # 상위 5개 인덱스 찾기
+    #predicted_notes_binary[0, top_5_indices] = 1  # 상위 5개만 1로 설정
 
-    # 후처리 과정: Accords_floral이 0인 경우, 플로럴 관련 노트를 0으로 설정
-    if weighted_results.get('Accords_floral', 0) == 0:
-        floral_note_indices = [8, 9, 12, 13]  # Freesia, Rose, Muguet, Magnolia
-        for idx in floral_note_indices:
-            predicted_notes_binary[0][idx] = 0
-
-    # 후처리 과정: Accords_fruity가 0인 경우, Fruity 관련 노트를 0으로 설정
-    if weighted_results.get('Accords_fruity', 0) == 0:
-        fruity_note_indices = [16, 4, 5, 6]  # Black Currant, Peach, Fig, Black Cherry
-        for idx in fruity_note_indices:
-            predicted_notes_binary[0][idx] = 0
+    # # 후처리 과정: Accords_floral이 0인 경우, 플로럴 관련 노트를 0으로 설정
+    # if weighted_results.get('Accords_floral', 0) == 0:
+    #     floral_note_indices = [8, 9, 12, 13]  # Freesia, Rose, Muguet, Magnolia
+    #     for idx in floral_note_indices:
+    #         predicted_notes_binary[0][idx] = 0
+    #
+    # # 후처리 과정: Accords_fruity가 0인 경우, Fruity 관련 노트를 0으로 설정
+    # if weighted_results.get('Accords_fruity', 0) == 0:
+    #     fruity_note_indices = [16, 4, 5, 6]  # Black Currant, Peach, Fig, Black Cherry
+    #     for idx in fruity_note_indices:
+    #         predicted_notes_binary[0][idx] = 0
 
     # 결과 배열을 문자열로 변환
     predicted_notes_string = ', '.join(map(str, predicted_notes_binary[0]))
