@@ -46,11 +46,11 @@ def apply_weights_to_similarity(similarity_results, base_weight=0, category_weig
         category_weight = category_weights.get(category, 1)
         if detailed_adjustment:
             if similarity > 0.8:
-                weight = category_weight + similarity * weight_factor * 10
+                weight = category_weight + similarity * weight_factor * 1000
             elif similarity > 0.4:
-                weight = category_weight + similarity * weight_factor * 5
+                weight = category_weight + similarity * weight_factor * 500
             elif similarity > 0.1:
-                weight = category_weight + similarity * weight_factor * 3
+                weight = category_weight + similarity * weight_factor * 300
             else:
                 weight = base_weight
         else:
