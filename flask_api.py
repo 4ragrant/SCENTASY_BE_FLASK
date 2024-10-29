@@ -131,7 +131,7 @@ def store_conversation(session_id, user_input, assistant_response):
 def chat():
     data = request.json
     question = data.get('input', '')
-    session_id = data.get('session_id', 'default_session')
+    session_id = data.get('sessionId', 'default_session')
 
     # 대화 체인 생성
     rag_with_history = create_chain_with_history()
@@ -145,13 +145,19 @@ def chat():
     # 대화 기록 저장
     store_conversation(session_id, question, response)
 
+    print(f"Updated store for session ID: {session_id} - {store[session_id]}")
+
     return jsonify({'response': response})
 
 # 유사도 계산 및 예측 API
 @app.route("/api/recipe", methods=['POST'])
 def similarity_and_predict():
     data = request.json
-    session_id = data.get('session_id', 'default_session')
+    print(f"Received data: {data}")  # 요청 데이터 로그
+    session_id = data.get('sessionId')
+    #session_id = data.get('sessionId', 'default_session')
+
+    print(f"Requested session ID: {session_id}")
 
     # 해당 세션의 대화 기록을 가져옴
     if session_id not in store:
