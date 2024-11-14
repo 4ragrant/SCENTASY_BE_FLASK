@@ -1,0 +1,6 @@
+# 가상 환경 디렉터리 제외
+venv/
+
+# Python 캐시 파일 제외
+__pycache__/
+*.py[cod]
