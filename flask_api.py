@@ -1,7 +1,4 @@
 from flask import Flask, request, jsonify
-from langchain_core.runnables import RunnableWithMessageHistory
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.messages import HumanMessage, AIMessage
 from prompt_template import create_prompt
 from prompt_template import create_title_description_prompt
 from chat_model import create_chain
@@ -13,6 +10,9 @@ import pandas as pd
 import joblib
 import numpy as np
 
+from langchain_core.runnables import RunnableWithMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
 
@@ -84,14 +84,14 @@ def load_models():
     global model, scaler, accord_model, accord_scaler
 
     # 스케일러 로드
-    scaler = joblib.load('new_scaler.pkl')
+    scaler = joblib.load('scalers/new_scaler.pkl')
     #scaler = StandardScaler()
-    accord_scaler = joblib.load('accord_scaler.pkl')
+    accord_scaler = joblib.load('scalers/accord_scaler.pkl')
 
     # 전체 모델을 로드
     model = TransformerModel(input_size, output_size, num_heads, hidden_dim, num_layers)
-    model.load_state_dict(torch.load('new_trained_model.pth'))
-    accord_model = torch.load('accord_model.pth')
+    model.load_state_dict(torch.load('models/new_trained_model.pth'))
+    accord_model = torch.load('models/accord_model.pth')
 
     model.eval()
     accord_model.eval()

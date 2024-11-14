@@ -6,7 +6,7 @@ from kiwipiepy import Kiwi
 stopwords = ["의", "이", "가", "는", "에", "들", "을", "로", "과", "를", "와", "한", "하다"]
 
 # 동의어 데이터 로드
-synonym_file_path = 'synonym_data.csv'
+synonym_file_path = 'data/synonym_data.csv'
 synonym_data = pd.read_csv(synonym_file_path, encoding='utf-8')
 synonym_dict = {row['Category']: [synonym.strip() for synonym in row['Synonyms'].split(',')] for index, row in
                 synonym_data.iterrows()}
