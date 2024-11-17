@@ -130,8 +130,14 @@ def store_conversation(session_id, user_input, assistant_response):
 @app.route("/api/chats", methods=['POST'])
 def chat():
     data = request.json
+    
     question = data.get('input', '')
     session_id = data.get('sessionId', 'default_session')
+
+    extra_info = data.get('extraInfo', {})
+    nickname = extra_info.get('nickname', 'Scentasy 사용자')
+    # liked_scents = extra_info.get('likedScents', [])
+    # disliked_scents = extra_info.get('dislikedScents', [])
 
     # 대화 체인 생성
     rag_with_history = create_chain_with_history()
@@ -154,10 +160,11 @@ def chat():
 def similarity_and_predict():
     data = request.json
     print(f"Received data: {data}")  # 요청 데이터 로그
+    
     session_id = data.get('sessionId')
-    #session_id = data.get('sessionId', 'default_session')
-
-    print(f"Requested session ID: {session_id}")
+    extra_info = data.get('extraInfo', {})
+    liked_scents = extra_info.get('likedScents', [])
+    disliked_scents = extra_info.get('dislikedScents', [])
 
     # 해당 세션의 대화 기록을 가져옴
     if session_id not in store:
@@ -190,12 +197,17 @@ def similarity_and_predict():
         predicted_note_names = map_notes_to_columns(predicted_notes_array)
         predicted_accords_with_columns = map_accords_to_columns(predicted_accords)
 
+        # 노트 싫어하는 향 제외
+        filtered_note_names = [
+            note for note in predicted_note_names if all(dislike.lower() not in note.lower() for dislike in disliked_scents)
+        ]
+
         # 제목과 설명 생성
-        title, description = generate_title_and_description(conversation_text, predicted_note_names, predicted_accords_with_columns)
+        title, description = generate_title_and_description(conversation_text, filtered_note_names, predicted_accords_with_columns)
 
         return jsonify({
             'input_data': weighted_results,
-            'predicted_notes': predicted_notes,
+            'predicted_notes': predicted_note_names,
             'predicted_accords': predicted_accords_with_columns,
             'title': title,
             'description': description
@@ -246,18 +258,19 @@ def predict_internal(weighted_results):
 # 노트 매핑 함수
 def map_notes_to_columns(predicted_notes):
     note_columns = [
-        "Bergamot_TopNote", "Mint_TopNote", "Lemon_TopNote", "Aqual_TopNote",
-        "Grapefruit Blossom_TopNote", "Peach_TopNote", "Fig_TopNote",
-        "Black Cherry_TopNote", "Green_TopNote", "Freesia_MiddleNote",
-        "Rose_MiddleNote", "Pepper_MiddleNote", "Rosemary_MiddleNote",
-        "Muguet_MiddleNote", "Magnolia_MiddleNote", "Ocean_MiddleNote",
-        "Black Currant_MiddleNote", "Musk_MiddleNote", "Vanilla_BaseNote",
-        "Sandalwood_BaseNote", "Leather_BaseNote", "Patchouli_BaseNote",
-        "Cedar_BaseNote", "Abmer_BaseNote", "Frankincense_BaseNote",
-        "Hinoki Wood_BaseNote"
+        "TOP_BERGAMOT", "TOP_MINT", "TOP_LEMON", "TOP_AQUA",
+        "TOP_GRAPEFRUIT", "TOP_PEACH", "TOP_FIG",
+        "TOP_BLACKCHERRY", "TOP_GREEN", "MIDDLE_FREESIA",
+        "MIDDLE_ROSE", "MIDDLE_PEPPER", "MIDDLE_ROSEMARY",
+        "MIDDLE_MUGUET", "MIDDLE_MAGNOLIA", "MIDDLE_OCEAN",
+        "MIDDLE_BLACKCURRANT", "BASE_MUSK", "BASE_VANILLA",
+        "BASE_SANDALWOOD", "BASE_LEATHER", "BASE_PATCHOULI",
+        "BASE_CEDAR", "BASE_AMBER", "BASE_FRANKINCENSE",
+        "BASE_HINOKI"
     ]
 
     active_notes = [note_columns[i] for i, value in enumerate(predicted_notes) if value == 1]
+    
     return active_notes
 
 # 어코드 예측 함수
@@ -310,8 +323,8 @@ def generate_title_and_description(conversation_text, predicted_note_names, pred
     notes_str = ', '.join(predicted_note_names)
     accords_str = ', '.join([f"{accord['accord']} ({accord['value']})" for accord in predicted_accords_with_columns])
 
-    print(notes_str)
-    print(accords_str)
+    # print(notes_str)
+    # print(accords_str)
 
     prompt = prompt_template.format(
         conversation_text=conversation_text,
