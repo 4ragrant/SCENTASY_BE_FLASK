@@ -195,7 +195,7 @@ def similarity_and_predict():
 
         # 이름 매핑
         predicted_note_names = map_notes_to_columns(predicted_notes_array)
-        predicted_accords_with_columns = map_accords_to_columns(predicted_accords)
+        predicted_accords_names = map_accords_to_columns(predicted_accords)
 
         # 노트 싫어하는 향 제외
         filtered_note_names = [
@@ -203,12 +203,12 @@ def similarity_and_predict():
         ]
 
         # 제목과 설명 생성
-        title, description = generate_title_and_description(conversation_text, filtered_note_names, predicted_accords_with_columns)
+        title, description = generate_title_and_description(conversation_text, filtered_note_names, predicted_accords_names)
 
         return jsonify({
             'input_data': weighted_results,
             'predicted_notes': predicted_note_names,
-            'predicted_accords': predicted_accords_with_columns,
+            'predicted_accords': predicted_accords_names,
             'title': title,
             'description': description
         })
@@ -307,12 +307,12 @@ def map_accords_to_columns(predicted_accords):
     ]
 
     # 어코드 이름과 값을 매핑 및 필터링
-    predicted_accords_with_columns = [
+    predicted_accords_names = [
         {"accord": accord_columns[i], "value": round(predicted_accords[i], 3)} 
         for i in range(len(predicted_accords)) if predicted_accords[i] >= 0.5
     ]
 
-    return predicted_accords_with_columns
+    return predicted_accords_names
 
 # 제목과 설명 생성 함수
 def generate_title_and_description(conversation_text, predicted_note_names, predicted_accords_with_columns):
