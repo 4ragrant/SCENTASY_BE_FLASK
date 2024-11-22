@@ -207,6 +207,7 @@ def similarity_and_predict():
 
         return jsonify({
             'input_data': weighted_results,
+            'binary_note_recipe': predicted_notes,
             'predicted_notes': filtered_note_names,
             'predicted_accords': predicted_accords_names,
             'title': title,
