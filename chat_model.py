@@ -14,6 +14,7 @@ def create_chain(prompt):
     chain = (
         {
             #"context": itemgetter("question") | retriever,
+            "nickname": itemgetter("nickname"),
             "context": itemgetter("question"),
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history"),

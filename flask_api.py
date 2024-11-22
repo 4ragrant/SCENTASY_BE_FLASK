@@ -136,15 +136,16 @@ def chat():
 
     extra_info = data.get('extraInfo', {})
     nickname = extra_info.get('nickname', 'Scentasy 사용자')
-    # liked_scents = extra_info.get('likedScents', [])
-    # disliked_scents = extra_info.get('dislikedScents', [])
 
     # 대화 체인 생성
     rag_with_history = create_chain_with_history()
 
     # 대화 처리
     response = rag_with_history.invoke(
-        {"question": question},
+        {
+            "question": question,
+            "nickname": nickname
+        },
         {"configurable": {"session_id": session_id}}
     )
 
